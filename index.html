@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seismic PFP Generator Pro</title>
+
+<style>
+.input-overlay {
+    white-space: nowrap;
+    overflow: hidden;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    line-height: 1 !important; /* Quan trọng để không bị đẩy dòng xuống */
+}
+
+/* Xóa viền khi đang gõ để không bị dính vào ảnh tải về */
+.input-overlay:focus {
+    outline: none;
+    border: none;
+}
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+}
+
+#game-container {
+    width: 100vw;
+    height: 100vh;
+    background: url('anh2.png') center/cover no-repeat;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#welcome-screen {
+    position: absolute;
+    z-index: 100;
+    background: rgba(0,0,0,0.9);
+    padding: 50px;
+    border-radius: 16px;
+    text-align: center;
+    color: white;
+    border: 2px solid #a442f5;
+    box-shadow: 0 0 20px #a442f5;
+}
+
+button {
+    padding: 14px 40px;
+    background: #a442f5;
+    border: none;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#generator-ui {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+}
+
+#dark-overlay {
+    position: absolute;
+    width: 480px;
+    height: 450px;
+    left: 56px;
+    top: 42px;
+
+    background: rgba(0,0,0,0.25);
+    border-radius: 8px;
+
+    z-index: 0;           /* dưới user image */
+    pointer-events: none;
+	display: none;   /* 👈 QUAN TRỌNG */
+}
+
+.dark-bg {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.22); /* chỉnh đậm nhạt tại đây */
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Ảnh user luôn nằm trên */
+#user-image {
+    position: relative;
+    z-index: 1;
+}
+
+
+#pfp-wrapper {
+    position: relative;
+    /* CHỈNH TẠI ĐÂY: Dùng đúng số pixel, không dùng % */
+    width: 500px !important;  
+    height: 700px !important; 
+    min-width: 500px;
+    min-height: 700px;
+    max-width: 500px;
+    max-height: 700px;
+    overflow: hidden; /* Để ảnh nhân vật không tràn ra ngoài */
+}
+
+/* Ảnh người dùng */
+#user-image-container {
+    position: absolute;
+    width: 550px;
+    height: 450px;
+    top: 60px;
+    left: 60px;
+    z-index: 1;
+    cursor: move;
+    display: none;
+    pointer-events: auto;
+	overflow: hidden;
+}
+
+#user-image {
+    width: 100% !important;
+    height: 100% !important;
+    
+    /* Dòng 1: Ép ảnh dãn ra thêm một chút để bù cho phần bị cắt */
+    /* Công thức: 100% + (phần muốn cắt / tổng chiều rộng * 100) */
+    /* Ở đây 20px trên 550px là khoảng 4% */
+    width: calc(100% + 60px) !important; 
+
+    /* Dòng 2: Dịch ảnh sang trái để giấu 20px đó đi */
+    margin-left: -60px;
+
+    /* Dòng 3: Đảm bảo ảnh vẫn lấp đầy chiều cao */
+    object-fit: fill !important; 
+    display: block;
+}
+
+/* Resizer */
+.resizer {
+    width: 14px;
+    height: 14px;
+    background: #00ffcc;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    position: absolute;
+    z-index: 5;
+}
+.tl { top: -7px; left: -7px; cursor: nwse-resize; }
+.tr { top: -7px; right: -7px; cursor: nesw-resize; }
+.bl { bottom: -7px; left: -7px; cursor: nesw-resize; }
+.br { bottom: -7px; right: -7px; cursor: nwse-resize; }
+
+/* Khung PFP */
+#pfp-frame {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+    pointer-events: none;
+}
+
+/* Text overlay – CĂN BẰNG PX */
+.input-overlay {
+    position: absolute;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #fff;
+    font-size: 24px;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 1px;
+    line-height: 1.2;
+    z-index: 10;
+    pointer-events: auto; /* ⭐ BẮT BUỘC */
+}
+
+/* TOẠ ĐỘ CHUẨN THEO anh1.png */
+#input-name {
+    left: 100px;
+    top: 530px;
+    width: 200px;
+	
+    font-family: 'Orbitron', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1.5px;
+}
+
+#input-magnitude {
+    left: 200px;
+    top: 570px;
+    width: 120px;
+	
+	font-family: 'Orbitron', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1px;
+}
+
+#controls {
+    margin-top: 15px;
+    background: rgba(0,0,0,0.85);
+    padding: 15px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+.upload-btn {
+    padding: 14px 40px;
+    background: #a442f5;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 8px;
+    text-align: center;
+    user-select: none;
+    box-shadow: 0 0 12px rgba(164,66,245,0.6);
+    font-family: 'Orbitron', sans-serif;
+}
+
+.upload-btn:hover {
+    background: #c066ff;
+}
+</style>
+</head>
+
+<body>
+
+<audio id="bg-music" loop>
+    <source src="nhac.mp3" type="audio/mpeg">
+</audio>
+
+<div id="game-container">
+
+<div id="welcome-screen">
+    <h1>SEISMIC CARD GENERATOR</h1>
+    <button onclick="startGame()">START</button>
+</div>
+
+<div id="generator-ui">
+
+<div id="pfp-wrapper">
+
+    <!-- NỀN ĐEN CHỜ (chỉ hiện khi CHƯA upload ảnh) -->
+    <div id="dark-overlay"></div>
+
+    <div id="user-image-container">
+        <img id="user-image">
+        <div class="resizer br"></div>
+    </div>
+
+    <img id="pfp-frame" src="anh1.png">
+
+    <div id="input-name" class="input-overlay" contenteditable="true"></div>
+    <div id="input-magnitude" class="input-overlay" contenteditable="true"></div>
+
+</div>
+
+<div id="controls">
+    <input type="file" id="upload-pfp" accept="image/*" hidden>
+
+    <label for="upload-pfp" class="upload-btn">
+        UPLOAD YOUR PFP
+    </label>
+
+    <button onclick="downloadImage()">DOWNLOAD PFP</button>
+</div>
+
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script>
+const music = document.getElementById('bg-music');
+music.volume = 0.25;
+
+function startGame(){
+    document.getElementById('welcome-screen').style.display = 'none';
+    document.getElementById('generator-ui').style.display = 'flex';
+
+    // ✅ cho phép overlay xuất hiện (khi chưa upload ảnh)
+    document.getElementById('dark-overlay').style.display = 'block';
+
+    music.play().catch(()=>{});
+}
+
+/* Upload ảnh – SET SIZE CHUẨN */
+const upload = document.getElementById('upload-pfp');
+const container = document.getElementById('user-image-container');
+const img = document.getElementById('user-image');
+
+upload.onchange = e => {
+    const file = e.target.files[0];
+    if(!file) return;
+
+    const reader = new FileReader();
+    reader.onload = ev => {
+        img.src = ev.target.result;
+        container.style.display = 'block';
+        container.style.width = '390px';
+        container.style.height = '465px';
+        container.style.left = '53px';
+        container.style.top = '42px';
+
+        document.getElementById('dark-overlay').style.display = 'none';
+    };
+
+    reader.readAsDataURL(file); // ⭐ DÒNG QUAN TRỌNG BỊ THIẾU
+};
+
+/* Drag & Resize */
+let drag=false, resize=false, sx, sy, sw, sh, sl, st, h;
+
+container.onmousedown = e=>{
+    if(e.target.tagName === 'INPUT') return; // ⭐ QUAN TRỌNG
+
+    sx=e.clientX; sy=e.clientY;
+    sw=container.offsetWidth; sh=container.offsetHeight;
+    sl=container.offsetLeft; st=container.offsetTop;
+
+    if(e.target.classList.contains('resizer')){
+        resize=true; h=e.target;
+    } else drag=true;
+};
+
+window.onmousemove = e=>{
+    if(drag){
+        container.style.left = sl + e.clientX - sx + 'px';
+        container.style.top  = st + e.clientY - sy + 'px';
+    }
+    if(resize){
+        const dx=e.clientX-sx, dy=e.clientY-sy;
+        if(h.classList.contains('br')){
+            container.style.width=sw+dx+'px';
+            container.style.height=sh+dy+'px';
+        }
+    }
+};
+
+window.onmouseup=()=>{drag=false; resize=false};
+
+async function downloadImage() {
+    const wrapper = document.getElementById('pfp-wrapper');
+    
+    // 1. Tạm ẩn các nút điều chỉnh để không bị dính vào ảnh
+    document.querySelectorAll('.resizer').forEach(r => r.style.display = 'none');
+    
+    // 2. Chờ font chữ tải xong hoàn toàn
+    await document.fonts.ready;
+
+    // 3. Chụp ảnh - Cấu hình này giúp ảnh GIỐNG 100% TRÊN WEB
+    html2canvas(wrapper, {
+        backgroundColor: null,
+        scale: 2,           // Tăng độ nét (có thể để 1 nếu muốn nhẹ)
+        useCORS: true,
+        allowTaint: true,
+        
+        // CHỐNG MẤT GÓC: Ép chụp đúng tọa độ của khung wrapper
+        width: 500,
+        height: 700,
+        windowWidth: 500,
+        windowHeight: 700,
+        x: 0,
+        y: 0,
+        scrollX: 0,
+        scrollY: 0,
+
+        onclone: (clonedDoc) => {
+            // Đảm bảo khung trong bản sao không bị dính margin/padding lạ
+            const clonedWrapper = clonedDoc.getElementById('pfp-wrapper');
+            if(clonedWrapper) {
+                clonedWrapper.style.margin = "0";
+                clonedWrapper.style.padding = "0";
+            }
+            // Xóa viền khi đang gõ chữ
+            const name = clonedDoc.getElementById('input-name');
+            const mag = clonedDoc.getElementById('input-magnitude');
+            if(name) name.style.border = 'none';
+            if(mag) mag.style.border = 'none';
+        }
+    }).then(canvas => {
+        // 4. Tạo file ảnh và tải về
+        const link = document.createElement('a');
+        link.download = 'Seismic_PFP_Original.png';
+        link.href = canvas.toDataURL('image/png', 1.0);
+        link.click();
+
+        // 5. Hiện lại các nút điều chỉnh sau khi chụp xong
+        document.querySelectorAll('.resizer').forEach(r => r.style.display = 'block');
+    }).catch(err => {
+        console.error("Lỗi:", err);
+        document.querySelectorAll('.resizer').forEach(r => r.style.display = 'block');
+    });
+}
+</script>
+
+</body>
+</html>
