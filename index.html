@@ -49,6 +49,10 @@ html, body {
     color: white;
     border: 2px solid #a442f5;
     box-shadow: 0 0 20px #a442f5;
+	<h1>SEISMIC CARD GENERATOR</h1>
+
+    <!-- ✅ NÚT START -->
+    <button id="start-btn" onclick="startGame()">START</button>
 }
 
 button {
@@ -189,7 +193,7 @@ button {
     width: 200px;
 	
     font-family: 'Orbitron', sans-serif;
-    font-size: 22px;
+    font-size: 20px;
     letter-spacing: 1.5px;
 }
 
@@ -235,7 +239,7 @@ button {
 <body>
 
 <audio id="bg-music" loop>
-    <source src="nhac.mp3" type="audio/mpeg">
+    <source src="./nhac.mp3" type="audio/mpeg">
 </audio>
 
 <div id="game-container">
@@ -289,7 +293,9 @@ function startGame(){
 
     // ✅ cho phép overlay xuất hiện (khi chưa upload ảnh)
     document.getElementById('dark-overlay').style.display = 'block';
-
+// ✅ NHẠC CHẠY SAU CLICK → GitHub cho phép
+    const music = document.getElementById('bg-music');
+    music.volume = 0.25;
     music.play().catch(()=>{});
 }
 
